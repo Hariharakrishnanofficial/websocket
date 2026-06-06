@@ -71,6 +71,16 @@ test('catalyst.json declares react-vite as the Slate source', () => {
   const target = cfg.slate[0];
   assert.match(target.source, /react-vite/,
     `Slate target source must point at react-vite (got "${target.source}")`);
+  // Source MUST be a relative path. An absolute path like
+  // /home/workspace/Websocket/react-vite will not resolve on the Slate
+  // deployer's filesystem (it lives at /catalyst/websocket/), causing the
+  // deployer to fall back to the repo root and fail to locate `dist/`.
+  assert.ok(
+    !path.isAbsolute(target.source),
+    `slate[0].source must be a relative path (got absolute "${target.source}"). ` +
+    `Absolute paths break the Slate deploy because the deployer cannot ` +
+    `resolve host-machine paths in its container.`,
+  );
 });
 
 // ---------------------------------------------------------------------------
