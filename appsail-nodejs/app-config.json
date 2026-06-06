@@ -1,7 +1,7 @@
 {
 	"command": "node index.js",
 	"build_path": "./",
-	"stack": "node16",
+	"stack": "node18",
 	"env_variables": {
 		"ROBOT_TOKEN": "",
 		"CONTROLLER_TOKEN": "",

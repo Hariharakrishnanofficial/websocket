@@ -11,8 +11,10 @@
   "scripts": {
     "dev:web":    "npm --workspace react-vite run dev",
     "dev:relay":  "npm --workspace appsail-nodejs run dev",
+    "build":      "npm --workspace react-vite run build",
     "build:web":  "npm --workspace react-vite run build",
     "test:relay": "npm --workspace appsail-nodejs test",
+    "test":       "npm --workspace appsail-nodejs test",
     "lint":       "npm --workspace react-vite run lint"
   },
   "engines": {

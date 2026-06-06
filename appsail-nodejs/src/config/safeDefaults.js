@@ -10,8 +10,6 @@
  * mode will then reject unauthenticated connections — fail closed).
  */
 
-'use strict';
-
 const safeDefaults = Object.freeze({
   environment: process.env.ENVIRONMENT || 'production',
   websocket: {
@@ -43,4 +41,4 @@ const safeDefaults = Object.freeze({
   revisionId: 'safe-defaults',
 });
 
-module.exports = safeDefaults;
+export default safeDefaults;
