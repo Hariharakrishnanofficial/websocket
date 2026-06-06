@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d12" />
+    <title>Robot Controller · Offline</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { margin:0; height:100%; background:#0b0d12; color:#e7e9ee;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                     Inter, Helvetica, Arial, sans-serif; }
+      body { display:flex; align-items:center; justify-content:center; padding:24px; }
+      .card {
+        max-width: 420px; width: 100%; background:#13161d;
+        border:1px solid #262b36; border-radius:18px; padding:24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.45); text-align:left;
+      }
+      h1 { margin:0 0 6px; font-size: 20px; }
+      p  { margin: 6px 0; font-size: 14px; color: #8b93a7; line-height:1.5; }
+      button {
+        margin-top:14px; width:100%; padding:12px 16px;
+        background:#4dabf7; color:#000; border:0; border-radius:12px;
+        font-weight:700; font-size: 14px; cursor:pointer;
+      }
+      .pill { display:inline-block; padding:2px 8px; border-radius:999px;
+              background:#1a1e27; color:#8b93a7; font-size:11px; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <span class="pill">offline</span>
+      <h1>You're offline</h1>
+      <p>
+        The Robot Controller PWA is cached, but a live WebSocket link to the
+        relay is required to drive the robot.
+      </p>
+      <p>
+        Check your connection, then retry. The app shell will load instantly
+        once you're back online.
+      </p>
+      <button type="button" onclick="location.reload()">Retry</button>
+    </main>
+  </body>
+</html>

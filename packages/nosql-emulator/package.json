@@ -1,0 +1,10 @@
+{
+  "name": "@ws/nosql-emulator",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./schema": "./schema.mjs"
+  }
+}

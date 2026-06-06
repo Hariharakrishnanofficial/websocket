@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OTA (Over-the-Air) Configuration",
+  "description": "Firmware update delivery settings for ESP32 robots.",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^ota\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "enabled": { "type": "boolean", "default": false },
+    "server": {
+      "type": "object",
+      "properties": {
+        "firmwareBucket": { "type": "string", "minLength": 1 },
+        "manifestPath": { "type": "string", "default": "manifest.json" },
+        "checksumAlgorithm": {
+          "type": "string",
+          "enum": ["sha256", "md5"],
+          "default": "sha256"
+        }
+      },
+      "required": ["firmwareBucket"]
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "autoUpdate": { "type": "boolean", "default": false },
+        "requireApproval": { "type": "boolean", "default": true },
+        "updateWindowCron": { "type": ["string", "null"], "default": null },
+        "maxConcurrentUpdates": { "type": "integer", "minimum": 1, "default": 1 },
+        "rollbackOnFailure": { "type": "boolean", "default": true },
+        "maxRetries": { "type": "integer", "minimum": 0, "maximum": 10, "default": 3 }
+      }
+    },
+    "targetSelector": {
+      "type": "object",
+      "properties": {
+        "allRobots": { "type": "boolean", "default": false },
+        "robotIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "firmwareVersionBelow": {
+          "type": ["string", "null"],
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "default": null
+        },
+        "targetVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        }
+      },
+      "required": ["targetVersion"]
+    },
+    "notification": {
+      "type": "object",
+      "properties": {
+        "notifyOnStart": { "type": "boolean", "default": true },
+        "notifyOnComplete": { "type": "boolean", "default": true },
+        "notifyOnFailure": { "type": "boolean", "default": true },
+        "recipients": {
+          "type": "array",
+          "items": { "type": "string", "format": "email" },
+          "default": []
+        }
+      }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "environment", "enabled", "server", "targetSelector",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

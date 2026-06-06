@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Controller Defaults Configuration",
+  "description": "Default settings for React Controller clients (Layer 1).",
+  "type": "object",
+  "definitions": {
+    "secretRef": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "secretRef" },
+        "cacheSegment": { "type": "string", "minLength": 1 },
+        "cacheKey": { "type": "string", "minLength": 1 },
+        "rotateAfterDays": { "type": ["integer", "null"], "minimum": 1 }
+      },
+      "required": ["type", "cacheSegment", "cacheKey"]
+    }
+  },
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^controller\\.defaults\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "websocket": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "controllerTokenRef": { "$ref": "#/definitions/secretRef" }
+      },
+      "required": ["url"]
+    },
+    "heartbeat": {
+      "type": "object",
+      "properties": {
+        "intervalMs": { "type": "integer", "minimum": 100, "maximum": 5000 },
+        "dedupeMs": { "type": "integer", "minimum": 50, "maximum": 5000 }
+      },
+      "required": ["intervalMs", "dedupeMs"]
+    },
+    "reconnect": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "baseDelayMs": { "type": "integer", "minimum": 100, "default": 1000 },
+        "maxDelayMs": { "type": "integer", "minimum": 1000, "maximum": 60000, "default": 8000 },
+        "maxAttempts": { "type": "integer", "minimum": 0, "default": 0 },
+        "backoffMultiplier": { "type": "number", "minimum": 1.0, "maximum": 4.0, "default": 2.0 }
+      },
+      "required": ["enabled"]
+    },
+    "commands": {
+      "type": "object",
+      "properties": {
+        "validCommands": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 1 },
+          "minItems": 1
+        },
+        "stopCommand": { "type": "string", "maxLength": 1 },
+        "stopAlwaysForwarded": { "type": "boolean", "default": true }
+      },
+      "required": ["validCommands", "stopCommand"]
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "keyboardEnabled": { "type": "boolean", "default": true },
+        "touchEnabled": { "type": "boolean", "default": true },
+        "gamepadEnabled": { "type": "boolean", "default": false },
+        "keyMap": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "maxLength": 1 }
+        },
+        "touchDeadZonePx": { "type": "integer", "minimum": 0, "default": 10 },
+        "longPressThresholdMs": { "type": "integer", "minimum": 0, "default": 0 }
+      }
+    },
+    "display": {
+      "type": "object",
+      "properties": {
+        "showDebugPanel": { "type": "boolean", "default": false },
+        "maxLogLines": { "type": "integer", "minimum": 10, "maximum": 1000, "default": 100 },
+        "showLatencyIndicator": { "type": "boolean", "default": true },
+        "showConnectionBadge": { "type": "boolean", "default": true },
+        "theme": {
+          "type": "string",
+          "enum": ["dark", "light", "system"],
+          "default": "dark"
+        }
+      }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "environment",
+    "websocket", "heartbeat", "reconnect", "commands",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Diagnostics Configuration",
+  "description": "Debug, profiling, and diagnostic data collection settings.",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^diagnostics\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "debug": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "verboseWsFrames": { "type": "boolean", "default": false },
+        "logAllCommands": { "type": "boolean", "default": false },
+        "logTimingBreakdown": { "type": "boolean", "default": false },
+        "logDedupeDecisions": { "type": "boolean", "default": false },
+        "logRateLimitEvents": { "type": "boolean", "default": false }
+      },
+      "required": ["enabled"]
+    },
+    "profiling": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "cpuProfileIntervalMs": { "type": "integer", "minimum": 10000, "default": 60000 },
+        "heapSnapshotOnOom": { "type": "boolean", "default": true },
+        "traceWsLatency": { "type": "boolean", "default": true }
+      }
+    },
+    "healthCheck": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "intervalMs": { "type": "integer", "minimum": 5000, "default": 30000 },
+        "endpoint": { "type": "string", "pattern": "^/", "default": "/health" },
+        "includeDetails": { "type": "boolean", "default": true },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["websocket", "nosql", "cache", "memory", "disk", "cpu"]
+          },
+          "default": ["websocket", "nosql", "cache", "memory"]
+        }
+      }
+    },
+    "errorReporting": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "captureUnhandledRejections": { "type": "boolean", "default": true },
+        "captureUncaughtExceptions": { "type": "boolean", "default": true },
+        "stackTraceLimit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+        "sanitizeSecrets": { "type": "boolean", "default": true },
+        "reportToMail": { "type": "boolean", "default": false },
+        "reportRecipient": { "type": ["string", "null"], "format": "email", "default": null }
+      }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "environment", "debug",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telemetry Configuration",
+  "description": "Controls telemetry data collection, storage, and alerting.",
+  "type": "object",
+  "definitions": {
+    "alertRule": {
+      "type": "object",
+      "properties": {
+        "metric": { "type": "string" },
+        "condition": { "type": "string" },
+        "windowMinutes": { "type": "integer", "minimum": 1 },
+        "action": { "type": "string", "enum": ["email", "log", "webhook"] },
+        "recipient": { "type": "string" }
+      },
+      "required": ["metric", "condition", "windowMinutes", "action"]
+    }
+  },
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^telemetry\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "collection": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "intervalMs": { "type": "integer", "minimum": 1000, "maximum": 60000, "default": 5000 },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "commandLatencyMs": { "type": "boolean", "default": true },
+            "wsFrameCount": { "type": "boolean", "default": true },
+            "wsReconnectCount": { "type": "boolean", "default": true },
+            "robotHeapFree": { "type": "boolean", "default": true },
+            "robotWifiRssi": { "type": "boolean", "default": true },
+            "robotUptimeSeconds": { "type": "boolean", "default": true },
+            "relayActiveConnections": { "type": "boolean", "default": true },
+            "relayCommandsPerSecond": { "type": "boolean", "default": true },
+            "dedupeDropCount": { "type": "boolean", "default": true },
+            "rateLimitHitCount": { "type": "boolean", "default": true }
+          }
+        }
+      },
+      "required": ["enabled"]
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": ["catalyst-datastore", "catalyst-nosql"]
+        },
+        "tableName": { "type": "string" },
+        "batchSize": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 },
+        "flushIntervalMs": { "type": "integer", "minimum": 1000, "default": 10000 },
+        "retentionDays": { "type": "integer", "minimum": 0, "default": 30 },
+        "archiveToStratus": { "type": "boolean", "default": false },
+        "stratusBucket": { "type": "string" }
+      },
+      "required": ["backend", "tableName"]
+    },
+    "alerting": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/alertRule" },
+          "default": []
+        }
+      }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "environment", "collection", "storage",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

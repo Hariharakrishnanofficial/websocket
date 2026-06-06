@@ -23,7 +23,6 @@ export default defineConfig({
       '@stores':   r('src/stores'),
       '@config':   r('src/config'),
       '@assets':   r('src/assets'),
-      '@ws/shared-protocol': r('../packages/shared-protocol/src/index.js'),
     },
   },
   plugins: [

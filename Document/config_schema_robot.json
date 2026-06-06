@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Robot Instance Configuration",
+  "description": "Per-robot hardware, networking, and motion parameters (Layer 3 — ESP32).",
+  "type": "object",
+  "definitions": {
+    "secretRef": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "secretRef" },
+        "cacheSegment": { "type": "string", "minLength": 1 },
+        "cacheKey": { "type": "string", "minLength": 1 },
+        "rotateAfterDays": { "type": ["integer", "null"], "minimum": 1 }
+      },
+      "required": ["type", "cacheSegment", "cacheKey"]
+    },
+    "motorPins": {
+      "type": "object",
+      "properties": {
+        "in1": { "type": "integer", "minimum": 0, "maximum": 39 },
+        "in2": { "type": "integer", "minimum": 0, "maximum": 39 },
+        "enable": { "type": "integer", "minimum": 0, "maximum": 39 }
+      },
+      "required": ["in1", "in2"]
+    }
+  },
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^robot\\.instance\\.[a-z0-9-]+$"
+    },
+    "robotId": {
+      "type": "string",
+      "pattern": "^esp32-[a-z]+-\\d{2}$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "hardware": {
+      "type": "object",
+      "properties": {
+        "model": { "type": "string" },
+        "chipRevision": { "type": ["string", "null"] },
+        "flashSizeMB": { "type": "integer", "enum": [2, 4, 8, 16], "default": 4 },
+        "firmwareSlot": { "type": "string", "enum": ["A", "B"], "default": "A" },
+        "firmwareVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "boardLayout": { "type": ["string", "null"] }
+      },
+      "required": ["model", "firmwareSlot", "firmwareVersion"]
+    },
+    "wifi": {
+      "type": "object",
+      "properties": {
+        "ssidRef": { "$ref": "#/definitions/secretRef" },
+        "passwordRef": { "$ref": "#/definitions/secretRef" },
+        "staticIp": { "type": ["string", "null"], "format": "ipv4" },
+        "dns": { "type": "string", "format": "ipv4", "default": "8.8.8.8" },
+        "reconnectBackoffMs": { "type": "integer", "minimum": 500, "default": 2000 },
+        "reconnectMaxMs": { "type": "integer", "minimum": 1000, "default": 30000 }
+      },
+      "required": ["ssidRef", "passwordRef"]
+    },
+    "websocket": {
+      "type": "object",
+      "properties": {
+        "serverUrl": { "type": "string", "format": "uri" },
+        "tokenRef": { "$ref": "#/definitions/secretRef" },
+        "reconnectBaseMs": { "type": "integer", "minimum": 500, "default": 2000 },
+        "reconnectMaxMs": { "type": "integer", "minimum": 1000, "default": 30000 },
+        "registrationJson": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "const": "robot" },
+            "id": { "type": "string" }
+          },
+          "required": ["type", "id"]
+        }
+      },
+      "required": ["serverUrl", "tokenRef", "registrationJson"]
+    },
+    "motion": {
+      "type": "object",
+      "properties": {
+        "driverType": { "type": "string", "default": "L298N" },
+        "pins": {
+          "type": "object",
+          "properties": {
+            "motorA": { "$ref": "#/definitions/motorPins" },
+            "motorB": { "$ref": "#/definitions/motorPins" }
+          },
+          "required": ["motorA", "motorB"]
+        },
+        "speedLimit": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 1.0 },
+        "defaultSpeed": { "type": "integer", "minimum": 0, "maximum": 255, "default": 255 },
+        "rampUpMs": { "type": "integer", "minimum": 0, "default": 0 },
+        "emergencyStopPinLow": { "type": "boolean", "default": true }
+      },
+      "required": ["driverType", "pins", "speedLimit"]
+    },
+    "watchdog": {
+      "type": "object",
+      "properties": {
+        "commandTimeoutMs": { "type": "integer", "minimum": 500, "maximum": 5000, "default": 750 },
+        "enabled": { "type": "boolean", "default": true },
+        "action": {
+          "type": "string",
+          "enum": ["stop", "brake", "coast"],
+          "default": "stop"
+        }
+      },
+      "required": ["commandTimeoutMs"]
+    },
+    "status": {
+      "type": "object",
+      "properties": {
+        "reportIntervalMs": { "type": "integer", "minimum": 0, "default": 30000 },
+        "includeHeapFree": { "type": "boolean", "default": true },
+        "includeWifiRssi": { "type": "boolean", "default": true },
+        "includeUptimeSeconds": { "type": "boolean", "default": true }
+      }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "robotId", "environment",
+    "hardware", "wifi", "websocket", "motion", "watchdog",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

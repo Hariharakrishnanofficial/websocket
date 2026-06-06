@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WebSocket Configuration",
+  "description": "All WebSocket server parameters for the AppSail Relay (Layer 2).",
+  "type": "object",
+  "definitions": {
+    "secretRef": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "secretRef" },
+        "cacheSegment": { "type": "string", "minLength": 1 },
+        "cacheKey": { "type": "string", "minLength": 1 },
+        "rotateAfterDays": { "type": ["integer", "null"], "minimum": 1 }
+      },
+      "required": ["type", "cacheSegment", "cacheKey"]
+    }
+  },
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^ws\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "endpoints": {
+      "type": "object",
+      "properties": {
+        "primaryPath": { "type": "string", "pattern": "^/" },
+        "fallbackPath": { "type": "string", "pattern": "^/" },
+        "videoPath": { "type": "string", "pattern": "^/" }
+      },
+      "required": ["primaryPath"]
+    },
+    "rateLimit": {
+      "type": "object",
+      "properties": {
+        "commandsPerSecond": { "type": "integer", "minimum": 1, "maximum": 200 },
+        "burst": { "type": "integer", "minimum": 1, "maximum": 50 },
+        "windowMs": { "type": "integer", "minimum": 100, "default": 1000 },
+        "penaltyAction": {
+          "type": "string",
+          "enum": ["drop", "throttle", "disconnect"],
+          "default": "drop"
+        }
+      },
+      "required": ["commandsPerSecond", "burst"]
+    },
+    "dedupe": {
+      "type": "object",
+      "properties": {
+        "serverWindowMs": { "type": "integer", "minimum": 50, "maximum": 5000 },
+        "clientWindowMs": { "type": "integer", "minimum": 50, "maximum": 5000 },
+        "bypassCommands": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 1 },
+          "default": ["S"]
+        }
+      },
+      "required": ["serverWindowMs", "clientWindowMs"]
+    },
+    "heartbeat": {
+      "type": "object",
+      "properties": {
+        "controllerIntervalMs": { "type": "integer", "minimum": 100, "maximum": 5000 },
+        "serverPingIntervalMs": { "type": "integer", "minimum": 5000, "maximum": 120000 },
+        "pongTimeoutMs": { "type": "integer", "minimum": 1000, "default": 10000 },
+        "missedPongsBeforeKill": { "type": "integer", "minimum": 1, "maximum": 5, "default": 1 }
+      },
+      "required": ["controllerIntervalMs", "serverPingIntervalMs"]
+    },
+    "registration": {
+      "type": "object",
+      "properties": {
+        "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 30000 },
+        "tokenRequired": { "type": "boolean" },
+        "robotTokenRef": { "$ref": "#/definitions/secretRef" },
+        "controllerTokenRef": { "$ref": "#/definitions/secretRef" }
+      },
+      "required": ["timeoutMs", "tokenRequired"]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "maxCommandBytes": { "type": "integer", "const": 1 },
+        "maxFrameBytes": { "type": "integer", "minimum": 64, "maximum": 65536 },
+        "maxJsonEnvelopeBytes": { "type": "integer", "minimum": 64, "default": 256 },
+        "encoding": { "type": "string", "default": "utf-8" }
+      },
+      "required": ["maxCommandBytes", "maxFrameBytes"]
+    },
+    "connection": {
+      "type": "object",
+      "properties": {
+        "maxControllers": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 },
+        "maxRobots": { "type": "integer", "minimum": 1, "maximum": 1, "default": 1 },
+        "robotReplacementPolicy": {
+          "type": "string",
+          "enum": ["kick-previous", "reject-new"],
+          "default": "kick-previous"
+        },
+        "idleTimeoutMs": { "type": "integer", "minimum": 0, "default": 300000 }
+      }
+    },
+    "allowedOrigins": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["*"]
+    },
+    "tls": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean", "default": true },
+        "minVersion": { "type": "string", "default": "TLSv1.2" }
+      }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "environment", "endpoints", "rateLimit", "dedupe",
+    "heartbeat", "registration", "payload",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

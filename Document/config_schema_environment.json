@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Environment Configuration",
+  "description": "Top-level environment metadata. All other collections reference this.",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^env\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "displayName": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "catalystProjectId": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "datacenter": {
+      "type": "string",
+      "enum": ["US", "EU", "AU", "IN", "CA"]
+    },
+    "region": {
+      "type": ["string", "null"]
+    },
+    "urls": {
+      "type": "object",
+      "properties": {
+        "publicBaseUrl": { "type": "string", "format": "uri" },
+        "wsBaseUrl": { "type": "string", "format": "uri" },
+        "apiBaseUrl": { "type": "string", "format": "uri" },
+        "healthCheckUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["publicBaseUrl", "wsBaseUrl", "apiBaseUrl"]
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"]
+        },
+        "structured": { "type": "boolean", "default": true },
+        "sampleRate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 1.0
+        },
+        "excludePatterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      },
+      "required": ["level"]
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "isProductionSafe": { "type": "boolean" },
+        "requireTokenAuth": { "type": "boolean" },
+        "corsAllowedOrigins": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rateLimitGlobal": {
+          "type": "object",
+          "properties": {
+            "requestsPerMinute": {
+              "type": "integer",
+              "minimum": 10,
+              "maximum": 10000,
+              "default": 1000
+            },
+            "burstSize": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
+          }
+        }
+      },
+      "required": ["isProductionSafe", "requireTokenAuth"]
+    },
+    "inheritsFrom": {
+      "type": ["string", "null"],
+      "default": null
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string", "format": "email" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string", "format": "email" },
+    "changeReason": { "type": "string", "maxLength": 500 },
+    "lastDeployedAt": { "type": ["string", "null"], "format": "date-time" },
+    "deployedBy": { "type": ["string", "null"] }
+  },
+  "required": [
+    "key", "environment", "displayName", "catalystProjectId",
+    "datacenter", "urls", "logging", "security",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}

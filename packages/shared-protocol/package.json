@@ -1,0 +1,15 @@
+{
+  "name": "@ws/shared-protocol",
+  "version": "1.0.0",
+  "description": "Shared WebSocket protocol contracts (roles, message types, limits) used by the PWA and relay.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./roles": "./src/roles.js",
+    "./messages": "./src/messages.js",
+    "./limits": "./src/limits.js"
+  },
+  "files": ["src"],
+  "license": "MIT"
+}

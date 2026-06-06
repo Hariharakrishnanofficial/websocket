@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Feature Flags Configuration",
+  "description": "Runtime feature toggles that can enable/disable features without redeployment.",
+  "type": "object",
+  "definitions": {
+    "featureFlag": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "description": { "type": "string", "minLength": 1 },
+        "rolloutPercentage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 100
+        },
+        "enabledForRobots": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "enabledForUsers": {
+          "type": "array",
+          "items": { "type": "string", "format": "email" },
+          "default": []
+        },
+        "expiresAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "default": null
+        }
+      },
+      "required": ["enabled", "description"]
+    }
+  },
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^flags\\.(development|staging|production)$"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/featureFlag" }
+    },
+    "configVersion": { "type": "integer", "minimum": 1 },
+    "active": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string" },
+    "changeReason": { "type": "string", "maxLength": 500 }
+  },
+  "required": [
+    "key", "environment", "flags",
+    "configVersion", "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy", "changeReason"
+  ],
+  "additionalProperties": false
+}
