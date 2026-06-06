@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Robot Controller</title>
+
+<!-- React + Babel via CDN so this is a single-file deliverable -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --text: #e7e9ee;
+    --muted: #8b93a7;
+    --accent: #4dabf7;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --amber: #f1c40f;
+    --btn: #232733;
+    --btn-active: #4dabf7;
+  }
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+  }
+  .card {
+    width: min(420px, 92vw);
+    background: var(--card);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.5);
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: .3px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+
+  .status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: #101319; border-radius: 10px;
+    font-size: 13px; margin-bottom: 18px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .dot.connecting { background: var(--amber); animation: pulse 1s infinite; }
+  .dot.connected  { background: var(--green); }
+  .dot.disconnected { background: var(--red); }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 10px;
+    aspect-ratio: 1 / 1;
+  }
+  .btn {
+    background: var(--btn);
+    border: none;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform .05s ease, background .15s ease;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active, .btn.active { background: var(--btn-active); transform: scale(.96); }
+  .btn[disabled] { opacity: .4; cursor: not-allowed; }
+  .btn.fwd  { grid-column: 2; grid-row: 1; }
+  .btn.left { grid-column: 1; grid-row: 2; }
+  .btn.stop { grid-column: 2; grid-row: 2; background: #3a1f24; }
+  .btn.stop:active, .btn.stop.active { background: var(--red); }
+  .btn.right{ grid-column: 3; grid-row: 2; }
+  .btn.back { grid-column: 2; grid-row: 3; }
+
+  .log {
+    margin-top: 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: #101319;
+    border-radius: 10px;
+    padding: 10px 12px;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .row { display: flex; justify-content: space-between; gap: 8px; }
+  .small { font-size: 12px; color: var(--muted); }
+  input.url {
+    width: 100%; margin-top: 6px; padding: 8px 10px;
+    background: #101319; color: var(--text);
+    border: 1px solid #232733; border-radius: 8px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+/* =========================================================================
+ *  Robot Controller (Single-file React app)
+ *  - Auto-connects to the WebSocket server
+ *  - Registers as {"type":"controller"}
+ *  - Sends single-character commands (F/B/L/R/S)
+ *  - Shows connection + robot status
+ * =======================================================================*/
+
+const { useEffect, useRef, useState, useCallback } = React;
+
+// Default to ws://<page-host>:8080. Override by appending ?server=ws://ip:8080
+function defaultServerURL() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('server')) return params.get('server');
+    const host = location.hostname || 'localhost';
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${proto}://${host}:8080`;
+}
+
+const COMMANDS = {
+    F: { label: '▲',  name: 'Forward'  },
+    B: { label: '▼',  name: 'Backward' },
+    L: { label: '◀',  name: 'Left'     },
+    R: { label: '▶',  name: 'Right'    },
+    S: { label: 'STOP', name: 'Stop'   },
+};
+
+function App() {
+    const [status, setStatus]       = useState('connecting'); // connecting|connected|disconnected
+    const [robotOnline, setRobot]   = useState(false);
+    const [serverURL, setServerURL] = useState(defaultServerURL());
+    const [activeBtn, setActiveBtn] = useState(null);
+    const [logLines, setLogLines]   = useState([]);
+
+    const wsRef       = useRef(null);
+    const retryRef    = useRef(0);
+    const reconTimer  = useRef(null);
+
+    const addLog = useCallback((line) => {
+        const t = new Date().toLocaleTimeString();
+        setLogLines((l) => [`${t}  ${line}`, ...l].slice(0, 30));
+    }, []);
+
+    // -------- WebSocket lifecycle --------
+    const connect = useCallback(() => {
+        clearTimeout(reconTimer.current);
+        setStatus('connecting');
+        addLog(`connecting -> ${serverURL}`);
+
+        let ws;
+        try { ws = new WebSocket(serverURL); }
+        catch (e) { addLog(`bad URL: ${e.message}`); setStatus('disconnected'); return; }
+
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            retryRef.current = 0;
+            setStatus('connected');
+            ws.send(JSON.stringify({ type: 'controller' }));
+            addLog('registered as controller');
+        };
+
+        ws.onmessage = (ev) => {
+            try {
+                const msg = JSON.parse(ev.data);
+                if (msg.type === 'welcome') {
+                    setRobot(!!msg.robotConnected);
+                    addLog(`server welcome (robot=${msg.robotConnected ? 'on' : 'off'})`);
+                } else if (msg.type === 'status') {
+                    setRobot(!!msg.robotConnected);
+                    addLog(`robot ${msg.robotConnected ? 'connected' : 'disconnected'}`);
+                } else if (msg.type === 'error') {
+                    addLog(`server error: ${msg.message}`);
+                } else if (msg.type === 'telemetry') {
+                    addLog(`telemetry: ${msg.data}`);
+                }
+            } catch {
+                /* non-JSON message ignored */
+            }
+        };
+
+        ws.onerror = () => addLog('socket error');
+
+        ws.onclose = () => {
+            setStatus('disconnected');
+            setRobot(false);
+            const backoff = Math.min(1000 * 2 ** retryRef.current, 8000);
+            retryRef.current += 1;
+            addLog(`disconnected, retry in ${backoff} ms`);
+            reconTimer.current = setTimeout(connect, backoff);
+        };
+    }, [serverURL, addLog]);
+
+    useEffect(() => {
+        connect();
+        return () => {
+            clearTimeout(reconTimer.current);
+            if (wsRef.current) {
+                wsRef.current.onclose = null;
+                try { wsRef.current.close(); } catch {}
+            }
+        };
+    }, [connect]);
+
+    // -------- Command send --------
+    const sendCmd = useCallback((cmd) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(cmd);             // raw single-char for minimum latency
+        setActiveBtn(cmd);
+        setTimeout(() => setActiveBtn((b) => (b === cmd ? null : b)), 120);
+        addLog(`-> ${cmd} (${COMMANDS[cmd].name})`);
+    }, [addLog]);
+
+    // -------- Keyboard control --------
+    useEffect(() => {
+        const map = {
+            ArrowUp:    'F', w: 'F', W: 'F',
+            ArrowDown:  'B', s: 'B', S: 'B',
+            ArrowLeft:  'L', a: 'L', A: 'L',
+            ArrowRight: 'R', d: 'R', D: 'R',
+            ' ':        'S',
+        };
+        const down = (e) => { const c = map[e.key]; if (c) { e.preventDefault(); sendCmd(c); } };
+        window.addEventListener('keydown', down);
+        return () => window.removeEventListener('keydown', down);
+    }, [sendCmd]);
+
+    // -------- UI --------
+    const disabled = status !== 'connected';
+    const statusText = {
+        connecting:  'Connecting…',
+        connected:   robotOnline ? 'Connected · Robot online' : 'Connected · Robot OFFLINE',
+        disconnected:'Disconnected',
+    }[status];
+
+    return (
+        <div className="card">
+            <h1>🤖 Robot Controller</h1>
+            <div className="sub">WebSocket relay · single-character protocol</div>
+
+            <div className="status">
+                <span className={`dot ${status}`} />
+                <span>{statusText}</span>
+            </div>
+
+            <div className="pad">
+                {['F','L','S','R','B'].map((c) => (
+                    <button
+                        key={c}
+                        disabled={disabled}
+                        className={`btn ${c==='F'?'fwd':c==='B'?'back':c==='L'?'left':c==='R'?'right':'stop'} ${activeBtn===c?'active':''}`}
+                        onPointerDown={() => sendCmd(c)}
+                        aria-label={COMMANDS[c].name}
+                    >
+                        {COMMANDS[c].label}
+                    </button>
+                ))}
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+                <div className="row">
+                    <span className="small">Server URL</span>
+                    <span className="small">arrows / WASD / space</span>
+                </div>
+                <input
+                    className="url"
+                    value={serverURL}
+                    onChange={(e) => setServerURL(e.target.value)}
+                    onBlur={() => {
+                        if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); }
+                        retryRef.current = 0;
+                        connect();
+                    }}
+                />
+            </div>
+
+            <div className="log">
+                {logLines.length === 0 ? 'log…' : logLines.map((l, i) => <div key={i}>{l}</div>)}
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

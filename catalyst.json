@@ -1,0 +1,14 @@
+{
+  "appsail": [
+    {
+      "source": "appsail-nodejs",
+      "name": "AppSail"
+    }
+  ],
+  "slate": [
+    {
+      "name": "react-vite",
+      "source": "/home/workspace/Websocket/react-vite"
+    }
+  ]
+}

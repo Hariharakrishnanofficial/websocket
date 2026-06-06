@@ -1,0 +1,26 @@
+:root {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 Inter, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: dark;
+    color: #e7e9ee;
+    background-color: #0f1115;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: #0f1115;
+}
+
+button {
+    font-family: inherit;
+}
