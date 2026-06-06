@@ -1,0 +1,7 @@
+{
+  "name": "websocket-root",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix react-vite install && npm --prefix react-vite run build && rm -rf dist && cp -r react-vite/dist dist"
+  }
+}
