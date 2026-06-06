@@ -1,26 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ----------------------------------------------------------------------- */
+/* Design tokens (kept as CSS vars too so non-Tailwind primitives stay      */
+/* aligned with the palette).                                              */
+/* ----------------------------------------------------------------------- */
 :root {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 Inter, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    color-scheme: dark;
-    color: #e7e9ee;
-    background-color: #0f1115;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  --bg: #0b0d12;
+  --surface: #13161d;
+  --surface-2: #1a1e27;
+  --border: #262b36;
+  --text: #e7e9ee;
+  --muted: #8b93a7;
+  --accent: #4dabf7;
+  --success: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  color-scheme: dark;
 }
 
 html, body, #root { height: 100%; }
 
-body {
-    margin: 0;
-    min-width: 320px;
-    min-height: 100vh;
-    background: #0f1115;
+html {
+  /* allow the app to use 100dvh accurately on mobile chrome */
+  height: 100%;
 }
 
-button {
-    font-family: inherit;
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  overscroll-behavior: none;
 }
+
+/* Disable iOS double-tap zoom on interactive controls */
+button, [role='button'] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe-area helpers */
+@layer utilities {
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe { padding-left: env(safe-area-inset-left); }
+  .pr-safe { padding-right: env(safe-area-inset-right); }
+  .h-dvh  { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+  .no-tap { touch-action: none; }
+}
+
+/* Hide scrollbar for the log stream (still scrollable) */
+.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.08);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }

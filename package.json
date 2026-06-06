@@ -1,7 +1,21 @@
 {
-  "name": "websocket-root",
+  "name": "websocket-monorepo",
+  "version": "1.0.0",
   "private": true,
+  "description": "Realtime ESP32 robot controller — PWA front-end, Node.js WS relay (AppSail), and shared protocol package.",
+  "workspaces": [
+    "react-vite",
+    "appsail-nodejs",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "npm --prefix react-vite install && npm --prefix react-vite run build && rm -rf dist && cp -r react-vite/dist dist"
+    "dev:web":    "npm --workspace react-vite run dev",
+    "dev:relay":  "npm --workspace appsail-nodejs run dev",
+    "build:web":  "npm --workspace react-vite run build",
+    "test:relay": "npm --workspace appsail-nodejs test",
+    "lint":       "npm --workspace react-vite run lint"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

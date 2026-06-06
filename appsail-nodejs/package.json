@@ -6,14 +6,27 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "test": "node --test test/",
+    "test:nosql": "node --test test/nosql-schema.test.mjs test/nosql-indexes.test.mjs",
+    "test:nosql-report": "node test/nosql-table-suite.mjs"
   },
   "dependencies": {
+    "@ws/shared-protocol": "*",
     "express": "^4.18.2",
     "ws": "^8.18.0"
   },
+  "devDependencies": {
+    "@ws/nosql-emulator": "*"
+  },
   "engines": {
     "node": ">=16"
+  },
+  "imports": {
+    "#config/*":  "./src/config/*",
+    "#shared/*":  "./src/shared/*",
+    "#modules/*": "./src/modules/*",
+    "#app/*":     "./src/app/*"
   },
   "author": "",
   "license": "MIT"

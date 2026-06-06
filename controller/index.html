@@ -211,17 +211,58 @@ function App() {
         };
     }, [connect]);
 
-    // -------- Command send --------
-    const sendCmd = useCallback((cmd) => {
+    // -------- Press-and-hold model (dedupe + heartbeat) --------
+    //   See react-vite/src/useRobotSocket.js for the full rationale.
+    //   Short version: hold a direction -> resend it every 300 ms instead of
+    //   every keydown auto-repeat. Cuts WS traffic ~10x.
+    const HEARTBEAT_MS = 300;
+    const HOLD_CMDS = { F:1, B:1, L:1, R:1 };
+    const heldRef       = useRef(null);
+    const heartbeatRef  = useRef(null);
+
+    const rawSend = useCallback((cmd) => {
         const ws = wsRef.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) return;
-        ws.send(cmd);             // raw single-char for minimum latency
+        if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+        ws.send(cmd);
+        return true;
+    }, []);
+
+    const stopHeartbeat = useCallback(() => {
+        if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; }
+        heldRef.current = null;
+        setActiveBtn(null);
+    }, []);
+
+    const startHold = useCallback((cmd) => {
+        if (heldRef.current === cmd) return;
+        stopHeartbeat();
+        heldRef.current = cmd;
+        setActiveBtn(cmd);
+        rawSend(cmd);
+        addLog(`hold ${cmd}`);
+        heartbeatRef.current = setInterval(() => {
+            const ws = wsRef.current;
+            if (!ws || ws.readyState !== WebSocket.OPEN) { stopHeartbeat(); return; }
+            rawSend(heldRef.current);
+        }, HEARTBEAT_MS);
+    }, [rawSend, addLog, stopHeartbeat]);
+
+    const stopHold = useCallback(() => {
+        if (!heldRef.current) return;
+        stopHeartbeat();
+        if (rawSend('S')) addLog('-> S (release)');
+    }, [rawSend, addLog, stopHeartbeat]);
+
+    // Single-shot send (STOP button uses this).
+    const sendCmd = useCallback((cmd) => {
+        if (HOLD_CMDS[cmd]) { startHold(cmd); return; }
+        if (!rawSend(cmd)) return;
         setActiveBtn(cmd);
         setTimeout(() => setActiveBtn((b) => (b === cmd ? null : b)), 120);
         addLog(`-> ${cmd} (${COMMANDS[cmd].name})`);
-    }, [addLog]);
+    }, [rawSend, addLog, startHold]);
 
-    // -------- Keyboard control --------
+    // -------- Keyboard control (no auto-repeat spam) --------
     useEffect(() => {
         const map = {
             ArrowUp:    'F', w: 'F', W: 'F',
@@ -230,10 +271,28 @@ function App() {
             ArrowRight: 'R', d: 'R', D: 'R',
             ' ':        'S',
         };
-        const down = (e) => { const c = map[e.key]; if (c) { e.preventDefault(); sendCmd(c); } };
+        const down = (e) => {
+            if (e.repeat) return;                 // ignore OS key repeats
+            const c = map[e.key];
+            if (!c) return;
+            e.preventDefault();
+            if (HOLD_CMDS[c]) startHold(c);
+            else              sendCmd(c);
+        };
+        const up = (e) => {
+            const c = map[e.key];
+            if (c && HOLD_CMDS[c]) stopHold();
+        };
+        const blur = () => stopHold();
         window.addEventListener('keydown', down);
-        return () => window.removeEventListener('keydown', down);
-    }, [sendCmd]);
+        window.addEventListener('keyup',   up);
+        window.addEventListener('blur',    blur);
+        return () => {
+            window.removeEventListener('keydown', down);
+            window.removeEventListener('keyup',   up);
+            window.removeEventListener('blur',    blur);
+        };
+    }, [sendCmd, startHold, stopHold]);
 
     // -------- UI --------
     const disabled = status !== 'connected';
@@ -259,7 +318,15 @@ function App() {
                         key={c}
                         disabled={disabled}
                         className={`btn ${c==='F'?'fwd':c==='B'?'back':c==='L'?'left':c==='R'?'right':'stop'} ${activeBtn===c?'active':''}`}
-                        onPointerDown={() => sendCmd(c)}
+                        onPointerDown={(e) => {
+                            e.currentTarget.setPointerCapture?.(e.pointerId);
+                            if (HOLD_CMDS[c]) startHold(c);
+                            else              sendCmd(c);
+                        }}
+                        onPointerUp={()     => { if (HOLD_CMDS[c]) stopHold(); }}
+                        onPointerCancel={() => { if (HOLD_CMDS[c]) stopHold(); }}
+                        onPointerLeave={(e) => { if (HOLD_CMDS[c] && e.buttons === 0) stopHold(); }}
+                        onContextMenu={(e) => e.preventDefault()}
                         aria-label={COMMANDS[c].name}
                     >
                         {COMMANDS[c].label}

@@ -2,7 +2,11 @@
 	"command": "node index.js",
 	"build_path": "./",
 	"stack": "node16",
-	"env_variables": {},
+	"env_variables": {
+		"ROBOT_TOKEN": "",
+		"CONTROLLER_TOKEN": "",
+		"ALLOWED_ORIGINS": ""
+	},
 	"memory": 256,
 	"scripts": {
 		"preserve": "npm install",
